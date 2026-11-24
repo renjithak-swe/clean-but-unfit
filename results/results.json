@@ -1,0 +1,290 @@
+{
+  "row_count": 20640,
+  "value_cap": 500001.0,
+  "multipliers": [
+    1.0,
+    1.2,
+    1.5,
+    2.0
+  ],
+  "material_threshold": 0.05,
+  "is_generic_suite_passed": false,
+  "generic_checks": [
+    {
+      "name": "schema: expected columns present",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "parse: every row has 9 numeric fields",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "completeness: no NaN or infinite values",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "uniqueness: no duplicate rows",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: longitude within California",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: latitude within California",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: housing_median_age > 0",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: total_rooms > 0",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: total_bedrooms > 0",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: population > 0",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: households > 0",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: median_income > 0",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "range: median_house_value > 0",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "consistency: total_bedrooms <= total_rooms",
+      "is_passed": true,
+      "failing_rows": 0,
+      "total_rows": 20640
+    },
+    {
+      "name": "consistency: households <= population",
+      "is_passed": false,
+      "failing_rows": 3,
+      "total_rows": 20640
+    }
+  ],
+  "boundary_masses": [
+    {
+      "column": "housing_median_age",
+      "side": "max",
+      "value": 52.0,
+      "row_count": 1273,
+      "share": 0.06167635658914729,
+      "is_flagged": true
+    },
+    {
+      "column": "housing_median_age",
+      "side": "min",
+      "value": 1.0,
+      "row_count": 4,
+      "share": 0.0001937984496124031,
+      "is_flagged": false
+    },
+    {
+      "column": "total_rooms",
+      "side": "max",
+      "value": 39320.0,
+      "row_count": 1,
+      "share": 4.8449612403100775e-05,
+      "is_flagged": false
+    },
+    {
+      "column": "total_rooms",
+      "side": "min",
+      "value": 2.0,
+      "row_count": 1,
+      "share": 4.8449612403100775e-05,
+      "is_flagged": false
+    },
+    {
+      "column": "total_bedrooms",
+      "side": "max",
+      "value": 6445.0,
+      "row_count": 1,
+      "share": 4.8449612403100775e-05,
+      "is_flagged": false
+    },
+    {
+      "column": "total_bedrooms",
+      "side": "min",
+      "value": 1.0,
+      "row_count": 1,
+      "share": 4.8449612403100775e-05,
+      "is_flagged": false
+    },
+    {
+      "column": "population",
+      "side": "max",
+      "value": 35682.0,
+      "row_count": 1,
+      "share": 4.8449612403100775e-05,
+      "is_flagged": false
+    },
+    {
+      "column": "population",
+      "side": "min",
+      "value": 3.0,
+      "row_count": 1,
+      "share": 4.8449612403100775e-05,
+      "is_flagged": false
+    },
+    {
+      "column": "households",
+      "side": "max",
+      "value": 6082.0,
+      "row_count": 1,
+      "share": 4.8449612403100775e-05,
+      "is_flagged": false
+    },
+    {
+      "column": "households",
+      "side": "min",
+      "value": 1.0,
+      "row_count": 1,
+      "share": 4.8449612403100775e-05,
+      "is_flagged": false
+    },
+    {
+      "column": "median_income",
+      "side": "max",
+      "value": 15.0001,
+      "row_count": 49,
+      "share": 0.002374031007751938,
+      "is_flagged": false
+    },
+    {
+      "column": "median_income",
+      "side": "min",
+      "value": 0.4999,
+      "row_count": 12,
+      "share": 0.0005813953488372093,
+      "is_flagged": false
+    },
+    {
+      "column": "median_house_value",
+      "side": "max",
+      "value": 500001.0,
+      "row_count": 965,
+      "share": 0.04675387596899225,
+      "is_flagged": true
+    },
+    {
+      "column": "median_house_value",
+      "side": "min",
+      "value": 14999.0,
+      "row_count": 4,
+      "share": 0.0001937984496124031,
+      "is_flagged": false
+    }
+  ],
+  "questions": [
+    {
+      "id": "Q1",
+      "text": "Median of district median house values",
+      "answers_by_multiplier": {
+        "1.0": 179700.0,
+        "1.2": 179700.0,
+        "1.5": 179700.0,
+        "2.0": 179700.0
+      },
+      "observed_answer": 179700.0,
+      "absolute_spread": 0.0,
+      "relative_spread": 0.0,
+      "is_materially_affected": false
+    },
+    {
+      "id": "Q2",
+      "text": "Share of districts with median value >= $400k",
+      "answers_by_multiplier": {
+        "1.0": 0.08580426356589148,
+        "1.2": 0.08580426356589148,
+        "1.5": 0.08580426356589148,
+        "2.0": 0.08580426356589148
+      },
+      "observed_answer": 0.08580426356589148,
+      "absolute_spread": 0.0,
+      "relative_spread": 0.0,
+      "is_materially_affected": false
+    },
+    {
+      "id": "Q3",
+      "text": "Share of districts with median value >= $600k",
+      "answers_by_multiplier": {
+        "1.0": 0.0,
+        "1.2": 0.04675387596899225,
+        "1.5": 0.04675387596899225,
+        "2.0": 0.04675387596899225
+      },
+      "observed_answer": 0.0,
+      "absolute_spread": 0.04675387596899225,
+      "relative_spread": null,
+      "is_materially_affected": true
+    },
+    {
+      "id": "Q4",
+      "text": "Mean median value in districts with median income >= $80k",
+      "answers_by_multiplier": {
+        "1.0": 460370.68162083934,
+        "1.2": 524191.3591895803,
+        "1.5": 619922.3755426918,
+        "2.0": 779474.0694645442
+      },
+      "observed_answer": 460370.68162083934,
+      "absolute_spread": 319103.38784370484,
+      "relative_spread": 0.6931444607207153,
+      "is_materially_affected": true
+    },
+    {
+      "id": "Q5",
+      "text": "House value gained per +$10k median income (OLS slope)",
+      "answers_by_multiplier": {
+        "1.0": 41793.84920189625,
+        "1.2": 46916.56386467655,
+        "1.5": 54600.635858847025,
+        "2.0": 67407.42251579779
+      },
+      "observed_answer": 41793.84920189625,
+      "absolute_spread": 25613.573313901543,
+      "relative_spread": 0.612855092388557,
+      "is_materially_affected": true
+    }
+  ]
+}
