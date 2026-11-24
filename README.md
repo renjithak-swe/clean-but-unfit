@@ -33,7 +33,7 @@ Values at the cap are **not** imputed as truth. Each question is evaluated under
 The code uses the Python standard library only and was tested on Python 3.13.2. It needs 3.10+ for `statistics.linear_regression` and modern type syntax. It is deterministic, so no random seeds are involved.
 
 ```bash
-python -m unittest discover -s tests -t .   # 49 tests
+python -m unittest discover -s tests -t .   # 52 tests
 python -m clean_unfit --data-dir data --out results
 ```
 

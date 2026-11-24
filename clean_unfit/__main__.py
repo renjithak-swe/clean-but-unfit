@@ -14,14 +14,13 @@ from pathlib import Path
 
 from .checks import POSITIVE_COLUMNS, measure_boundary_mass, run_generic_suite
 from .data import SOURCE_SHA256, DataAcquisitionError, Table, download_archive, load_table
-from .figures import render_histogram, render_shift_chart
+from .figures import Layout, render_histogram, render_shift_chart
 from .questions import evaluate_questions
 from .report import ExperimentResult, build_json_payload, format_text_report
 
 ARCHIVE_FILENAME = "cal_housing.tgz"
 RESULTS_FILENAME = "results.json"
-HISTOGRAM_FILENAME = "house-value-histogram.svg"
-SHIFT_CHART_FILENAME = "answer-shifts.svg"
+FIGURE_SUFFIXES = {Layout.WIDE: "", Layout.NARROW: "-narrow"}
 CHART_LABELS = {
     "Q1": "Q1 · median value",
     "Q2": "Q2 · share worth $400k+",
@@ -78,12 +77,13 @@ def analyze_table(table: Table) -> ExperimentResult:
 
 
 def write_figures(table: Table, result: ExperimentResult, out_dir: Path) -> None:
-    (out_dir / HISTOGRAM_FILENAME).write_text(
-        render_histogram(table.columns["median_house_value"], result.value_cap), encoding="utf-8"
-    )
-    (out_dir / SHIFT_CHART_FILENAME).write_text(
-        render_shift_chart(result.question_results, result.multipliers, CHART_LABELS), encoding="utf-8"
-    )
+    for layout, suffix in FIGURE_SUFFIXES.items():
+        (out_dir / f"house-value-histogram{suffix}.svg").write_text(
+            render_histogram(table.columns["median_house_value"], result.value_cap, layout), encoding="utf-8"
+        )
+        (out_dir / f"answer-shifts{suffix}.svg").write_text(
+            render_shift_chart(result.question_results, result.multipliers, CHART_LABELS, layout), encoding="utf-8"
+        )
 
 
 def main(argv: list[str] | None = None) -> int:

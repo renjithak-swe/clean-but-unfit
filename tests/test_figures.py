@@ -3,7 +3,11 @@ from __future__ import annotations
 import unittest
 import xml.etree.ElementTree as ElementTree
 
+import re
+
 from clean_unfit.figures import (
+    CAP_SECTION_WIDTH,
+    Layout,
     bin_house_values,
     compute_nice_axis,
     compute_percent_shift,
@@ -66,6 +70,27 @@ class RenderTest(unittest.TestCase):
     def test_shift_chart_requires_all_questions(self) -> None:
         with self.assertRaises(ValueError):
             render_shift_chart(make_results()[:3], (1.0, 1.2, 1.5, 2.0), LABELS)
+
+
+class NarrowLayoutTest(unittest.TestCase):
+    def test_narrow_histogram_is_valid_and_phone_width(self) -> None:
+        svg = render_histogram([100_000.0, 150_000.0, CAP], CAP, Layout.NARROW)
+        ElementTree.fromstring(svg)
+        self.assertIn('viewBox="0 0 360 ', svg)
+
+    def test_narrow_shift_chart_is_valid_and_phone_width(self) -> None:
+        svg = render_shift_chart(make_results(), (1.0, 1.2, 1.5, 2.0), LABELS, Layout.NARROW)
+        ElementTree.fromstring(svg)
+        self.assertIn('viewBox="0 0 360 ', svg)
+        self.assertIn("no change in any scenario", svg)
+
+    def test_cap_label_is_clear_of_last_axis_label(self) -> None:
+        for layout in Layout:
+            with self.subTest(layout=layout):
+                svg = render_histogram([100_000.0, CAP], CAP, layout)
+                last_tick_x = float(re.search(r'x="([0-9.]+)"[^>]*>\$500k<', svg).group(1))
+                cap_label_x = float(re.search(r'x="([0-9.]+)"[^>]*>cap<', svg).group(1))
+                self.assertGreaterEqual(cap_label_x - last_tick_x, CAP_SECTION_WIDTH)
 
 
 class NiceAxisTest(unittest.TestCase):
