@@ -1,4 +1,4 @@
-"""Run the Day 1 experiment.
+"""Run the clean-but-unfit experiment.
 
 Usage: python -m clean_unfit [--data-dir data] [--out results]
 Exit codes: 0 success, 1 generic suite failed (the "clean" premise does not hold), 2 data error.
@@ -87,7 +87,7 @@ def write_figures(table: Table, result: ExperimentResult, out_dir: Path) -> None
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Clean but unfit: Day 1 experiment")
+    parser = argparse.ArgumentParser(description="Clean but unfit: which questions can a clean dataset answer?")
     parser.add_argument("--data-dir", type=Path, default=Path("data"), help="where the archive is cached")
     parser.add_argument("--out", type=Path, default=Path("results"), help="where results.json is written")
     args = parser.parse_args(argv)
