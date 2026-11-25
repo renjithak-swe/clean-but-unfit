@@ -50,6 +50,181 @@ python -m clean_unfit --data-dir data --out results
 | 1 | Generic suite failed (the "clean" premise does not fully hold) |
 | 2 | Data acquisition error |
 
+## Architecture
+
+### High-level design
+
+A single command-line run. It downloads one public archive, checks the file against a pinned checksum, and runs three independent analyses on the same table. It writes a report, JSON results and charts, and its exit code says whether the "clean" premise held.
+
+```mermaid
+flowchart LR
+    SRC[("figshare mirror<br/>cal_housing.tgz")]
+    CACHE[("data/cal_housing.tgz<br/>local cache, git-ignored")]
+
+    subgraph RUN["python -m clean_unfit"]
+        direction LR
+        ACQ["1 Acquire<br/>download once,<br/>verify SHA-256"] --> LOAD["2 Load<br/>parse 20,640 rows,<br/>keep malformed rows"]
+        LOAD --> ANALYZE["3 Analyse"]
+        subgraph ANALYZE_BRANCHES[" "]
+            G["Generic suite<br/>15 question-agnostic checks"]
+            B["Boundary mass<br/>piles at each column's max and min"]
+            Q["Questions x scenarios<br/>5 questions x 4 cap multipliers"]
+        end
+        ANALYZE --> G & B & Q
+        G & B & Q --> RES["4 ExperimentResult"]
+        RES --> OUT["5 Report"]
+    end
+
+    SRC -- "HTTPS, only if not cached" --> ACQ
+    ACQ <--> CACHE
+
+    OUT --> STDOUT["stdout<br/>human-readable report"]
+    OUT --> JSON["results/results.json"]
+    OUT --> SVG["results/*.svg<br/>wide + narrow charts"]
+    OUT --> EXIT{{"exit code<br/>0 suite passed<br/>1 suite failed<br/>2 data error"}}
+    RUN -. "JSON logs" .-> STDERR["stderr"]
+```
+
+| Concern | How it is handled |
+|---|---|
+| Dependencies | Python standard library only, including SVG charts drawn without a plotting library. Nothing to install. |
+| Data integrity | The archive is pinned by SHA-256. A mismatch stops the run with exit code 2, instead of analysing different data. |
+| Partial downloads | The download is written to `.part` and renamed only when complete, so an interrupted download never looks finished. |
+| Determinism | No randomness. The same archive always gives the same `results.json`. |
+| Honest failure | Malformed rows are kept in `unparsed_rows`, not dropped. If the "clean" premise fails, the exit code says so (1) and the report still prints. |
+
+### Low-level design: components
+
+The modules form a straight pipeline. The download function is injected, so tests run offline against fixtures. The three analyses don't depend on each other.
+
+```mermaid
+flowchart TB
+    MAIN["__main__.main<br/>argparse, JSON logging, exit codes"]
+    MAIN --> RE["run_experiment"]
+    RE --> DA["data.download_archive<br/>fetch_bytes injectable,<br/>.part then rename, compute_sha256"]
+    RE --> LT["data.load_table<br/>tar.gz member, parse_rows"]
+    RE --> AT["analyze_table"]
+
+    AT --> GS["checks.run_generic_suite<br/>schema, parse, completeness,<br/>uniqueness, ranges, cross-field"]
+    AT --> BM["checks.measure_boundary_mass<br/>per positive column, max and min"]
+    AT --> EQ["questions.evaluate_questions"]
+    EQ --> IMP["questions.impute_capped_values<br/>cap x multiplier"]
+    EQ --> QS["QUESTIONS Q1-Q5<br/>median, shares, conditional mean, OLS slope"]
+
+    MAIN --> FTR["report.format_text_report"]
+    MAIN --> BJP["report.build_json_payload"]
+    MAIN --> WF["write_figures"]
+    WF --> RH["figures.render_histogram"]
+    WF --> RS["figures.render_shift_chart"]
+```
+
+### Low-level design: one run
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant M as main
+    participant D as data
+    participant A as analyze_table
+    participant R as report and figures
+
+    M->>D: download_archive(data/cal_housing.tgz)
+    alt archive not cached
+        D->>D: fetch over HTTPS, write .part, rename
+    end
+    D->>D: compute_sha256 and compare with the pinned value
+    alt checksum mismatch or unreadable archive
+        D-->>M: DataAcquisitionError
+        M->>M: log the error, exit 2
+    else verified
+        M->>D: load_table
+        D-->>M: Table (columns + unparsed_rows)
+        M->>A: analyze_table(table)
+        A->>A: run_generic_suite, 15 CheckResults
+        A->>A: measure_boundary_mass, flag piles above 0.5%
+        A->>A: evaluate_questions at multipliers 1.0, 1.2, 1.5, 2.0
+        A-->>M: ExperimentResult
+        M->>R: text report to stdout, results.json, 4 SVGs
+        M->>M: exit 0 if every generic check passed, else 1
+    end
+```
+
+### Low-level design: data model and scenario logic
+
+The capped values aren't guessed. Each question is answered once per explicit assumption about what the cap hides, and the spread across those answers is the result.
+
+```mermaid
+classDiagram
+    class Table {
+        columns: column name to list of float
+        unparsed_rows: raw rows that failed to parse
+        row_count() int
+    }
+    class CheckResult {
+        name: str
+        is_passed: bool
+        failing_rows: int
+        total_rows: int
+    }
+    class BoundaryMass {
+        column: str
+        side: max or min
+        value: float
+        row_count: int
+        share: float
+        is_flagged: bool
+    }
+    class Question {
+        question_id: str
+        text: str
+        compute(values, incomes) float
+    }
+    class QuestionResult {
+        question_id: str
+        answers_by_multiplier: dict~float, float~
+        observed_answer() float
+        relative_spread() float or None
+        is_materially_affected(threshold) bool
+    }
+    class ExperimentResult {
+        row_count: int
+        value_cap: 500001
+        multipliers: 1.0, 1.2, 1.5, 2.0
+        material_threshold: 0.05
+        is_generic_suite_passed() bool
+    }
+    ExperimentResult "1" *-- "15" CheckResult : generic_checks
+    ExperimentResult "1" *-- "*" BoundaryMass : boundary_masses
+    ExperimentResult "1" *-- "5" QuestionResult : question_results
+    Question ..> QuestionResult : evaluated per multiplier
+    Table ..> ExperimentResult : analyze_table
+```
+
+```mermaid
+flowchart LR
+    V["median_house_value<br/>20,640 rows"] --> IMP{"value == 500,001?"}
+    IMP -- "no" --> KEEP["keep as recorded"]
+    IMP -- "yes, 965 rows" --> MUL["value x multiplier<br/>1.0, 1.2, 1.5, 2.0"]
+    KEEP & MUL --> SC["4 scenario columns"]
+    SC --> ANS["5 questions x 4 scenarios<br/>= 20 answers"]
+    ANS --> SPREAD["relative spread =<br/>(max - min) / |observed|<br/>observed 0: any change counts"]
+    SPREAD --> FLAG{"material?<br/>over 5%"}
+    FLAG -- "yes" --> SENS["answer depends on<br/>the unknown above the cap"]
+    FLAG -- "no" --> SAFE["answer holds whatever<br/>the cap hides"]
+```
+
+### Design decisions
+
+| Decision | Why | Rejected alternative |
+|---|---|---|
+| Sensitivity scenarios instead of imputing a "true" value | Values above the cap are unknown, so any single imputation would be a guess presented as data | Fitting a distribution to the tail, which adds an untestable assumption |
+| The generic suite is question-agnostic on purpose | The experiment tests what such suites can miss, so the suite must not know the questions | Tuning the checks to the five questions |
+| Exit code 1 when the "clean" premise fails | The headline claim depends on it, so a failure must be visible to scripts and CI, not just in the text | Always exiting 0 and leaving the result to be read |
+| Malformed rows are kept, not dropped | Silently dropping rows would make the data look cleaner than it is | Skipping rows that don't parse |
+| Pinned SHA-256 plus `.part` then rename | The analysis must run on exactly the archive that was published | Trusting the download URL |
+| Standard library only, with hand-written SVG | Anyone can run it without installing anything, and charts render the same everywhere | numpy, pandas and matplotlib for about 900 lines of logic |
+| The download function is injected | Tests run offline and deterministically | Mocking the network globally |
+
 ## Results (actual run, 2026-11-24)
 
 **H1: not fully supported.** 14 of 15 generic checks passed. `households <= population` failed on 3 of 20,640 rows. Those rows are real anomalies, for example 4 households recorded for 3 people. None of them is a capped row.
